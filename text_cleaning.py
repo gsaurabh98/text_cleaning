@@ -10,8 +10,6 @@ import string
 from contractions import contractions_dict
 from nltk.corpus import stopwords
 from nltk.corpus import wordnet
-from nltk.stem import WordNetLemmatizer
-from nltk.stem.porter import PorterStemmer
 from nltk.tokenize import word_tokenize
 from textblob import TextBlob
 
@@ -71,15 +69,17 @@ class Text:
             else:
                 return new_word
 
-    def cleaning(self, input_data):
+    def cleaning(self, input_data, options):
         '''
-        This function cleans the text
+        This function cleans the text as per the options selected by user
 
         Parameters
         ------------
         input_data: str
             input string to be cleaned
-            
+        options: list
+            list of cleaning operations to be performed
+
         Returns
         ------------
         str
@@ -89,54 +89,66 @@ class Text:
         # setting to lower
         input_data = input_data.lower()
 
+        # Removing special chars
+        if "Remove special characters" in options:
+            input_data = input_data.replace('_', ' ')
+            without_special_chars = re.sub("[^A-Za-z]", "", input_data)
+
         # Removing small words
-        words = ' '.join(word for word in input_data.split() if len(word) > 3)
+        if "Remove words with length less than 3" in options:
+            input_data = ' '.join(word for word in without_special_chars.split() \
+                                  if len(word) > 3)
 
         # removing urls from text
         # http matches literal characters
         # \S+ matches all non-whitespace characters (the end of the url)
         # we replace with the empty string
-        input_data = re.sub(r"http\S+", "", words)
+        if "Remove hyperlinks" in options:
+            input_data = re.sub(r"http\S+", "", input_data)
 
         # Fixes contractions such as `you're` to you `are`
-        expanded_text = self.expand_contractions(input_data)
+        if "Expand contractions" in options:
+            input_data = self._expand_contractions(input_data)
 
         # White spaces removal
-        input_str = expanded_text.strip()
+        input_data = input_data.strip()
 
         # removing numbers
-        number_free_text = re.sub(r'\d+', '', input_str)
+        if "Remove numbers" in options:
+            input_data = re.sub(r'\d+', '', input_data)
 
         # Punctuation removal
-        punctuation_free_text = number_free_text.translate(
-            str.maketrans('', '', string.punctuation))
+        if "Remove punctuations" in options:
+            input_data = input_data.translate(
+                str.maketrans('', '', string.punctuation))
 
         # converting sentence into tokens
-        tokens = word_tokenize(punctuation_free_text)
+        tokens = word_tokenize(input_data)
 
-        # removing stop words
+        # removing repeated chars
+        if "Remove repeated characters" in options:
+            tokens = [self._remove_repeated_characters(s) for s in
+                      tokens]
+
+        # correcting the spelling of text
+        if "Spelling correction" in options:
+            tokens = [str(TextBlob(words).correct()) for words in
+                      tokens]
+
+        # # removing stop words
         stop_words = set(stopwords.words('english'))
-
+        #
         nostopwods = [word for word in tokens if not word in stop_words]
 
         # morphological analysis of the words studies->study
-        lemmatizer = WordNetLemmatizer()
-
         # Now just remove along with stemming words
-        ps = PorterStemmer()
-        nostemwords = [ps.stem(lemmatizer.lemmatize(word)) for word in
-                       nostopwods]
+        if "Perform lemmatization" in options:
+            tokens = [lemmatizer.lemmatize(word) for word in
+                      nostopwods]
 
         # keeping same order of text
-        output = sorted(set(nostemwords), key=nostemwords.index)
+        tokens = sorted(set(tokens), key=tokens.index)
 
-        # removing repeated words
-        without_repeated_chars = [self.remove_repeated_characters(s) for s in
-                                  output]
+        clean_text = ' '.join(tokens)
 
-        # correcting the spelling of text
-        correct_spelling_text = [str(TextBlob(words).correct()) for words in
-                                 without_repeated_chars]
-
-        clean_text = ' '.join(correct_spelling_text)
         return clean_text
