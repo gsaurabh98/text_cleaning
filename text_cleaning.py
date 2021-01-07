@@ -91,8 +91,7 @@ class Text:
 
         # Removing special chars
         if "Remove special characters" in options:
-            input_data = input_data.replace('_', ' ')
-            without_special_chars = re.sub("[^A-Za-z]", "", input_data)
+            input_data = re.sub(r"[^A-Za-z]", "", input_data)
 
         # Removing small words
         if "Remove words with length less than 3" in options:
