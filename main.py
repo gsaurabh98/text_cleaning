@@ -13,7 +13,7 @@ st.text('')
 text = st.text_area('Input your text:')
 
 st.text('')
-options = st.multiselect('Select option(s) to perform',
+options = st.multiselect('Select option(s) to perform:',
                          ['Remove special characters',
                           'Remove words with length less than 3',
                           'Remove stop words',
