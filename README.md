@@ -9,4 +9,4 @@
  
  to start the app run below command:
  
- ```streamlit run main.py ``
+ ```streamlit run main.py ```
